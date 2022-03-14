@@ -194,6 +194,16 @@ func handleMessage(backend Backend, peer *Peer) error {
 	}
 	defer msg.Discard()
 
+	peer.Log().Debug(fmt.Sprintf("message size: %v, maxMessageSize: %v", msg.Size, maxMessageSize))
+	rlpMessage := []byte{}
+	n, err := msg.Payload.Read(rlpMessage)
+	if err != nil {
+		return fmt.Errorf("Error reading message for debugging RLP: %w", err)
+	}
+	peer.Log().Debug(fmt.Sprintf("bytes read: %v", n))
+	peer.Log().Debug(fmt.Sprintf("ETH message code: %d", msg.Code))
+	peer.Log().Debug(fmt.Sprintf("message received when: %v", msg.ReceivedAt))
+	peer.Log().Debug(fmt.Sprintf("raw RLP message: %x", rlpMessage))
 	var handlers = eth66
 	//if peer.Version() >= ETH67 { // Left in as a sample when new protocol is added
 	//	handlers = eth67

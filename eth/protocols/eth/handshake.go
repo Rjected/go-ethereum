@@ -38,17 +38,19 @@ func (p *Peer) Handshake(network uint64, td *big.Int, head common.Hash, genesis 
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
 
-	var status StatusPacket // safe to read after two values have been received from errc
+	var status StatusPacket     // safe to read after two values have been received from errc
+	var sentStatus StatusPacket // what we send
 
 	go func() {
-		errc <- p2p.Send(p.rw, StatusMsg, &StatusPacket{
+		sentStatus = StatusPacket{
 			ProtocolVersion: uint32(p.version),
 			NetworkID:       network,
 			TD:              td,
 			Head:            head,
 			Genesis:         genesis,
 			ForkID:          forkID,
-		})
+		}
+		errc <- p2p.Send(p.rw, StatusMsg, &sentStatus)
 	}()
 	go func() {
 		errc <- p.readStatus(network, &status, genesis, forkFilter)
@@ -66,6 +68,9 @@ func (p *Peer) Handshake(network uint64, td *big.Int, head common.Hash, genesis 
 		}
 	}
 	p.td, p.head = status.TD, status.Head
+
+	fmt.Printf("Here is the status packet we sent: %+v\n", sentStatus)
+	fmt.Printf("Here is the status packet we received: %+v\n", status)
 
 	// TD at mainnet block #7753254 is 76 bits. If it becomes 100 million times
 	// larger, it will still fit within 100 bits

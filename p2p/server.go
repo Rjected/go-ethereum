@@ -709,6 +709,8 @@ func (srv *Server) run() {
 		trusted[n.ID()] = true
 	}
 
+	srv.log.Info("starting to do networking!")
+
 running:
 	for {
 		select {
@@ -740,6 +742,7 @@ running:
 			srv.peerOpDone <- struct{}{}
 
 		case c := <-srv.checkpointPostHandshake:
+			srv.log.Debug("Trusting p2p peer", "peercount", len(peers), "id", c.node.ID())
 			// A connection has passed the encryption handshake so
 			// the remote identity is known (but hasn't been verified yet).
 			if trusted[c.node.ID()] {
@@ -942,6 +945,8 @@ func (srv *Server) setupConn(c *conn, flags connFlag, dialDest *enode.Node) erro
 		return errServerStopped
 	}
 
+	srv.log.Trace("SETTING UP A CONNECTION TO THE FOLLOWING DIALDEST", "dialdest", dialDest)
+
 	// If dialing, figure out the remote public key.
 	if dialDest != nil {
 		dialPubkey := new(ecdsa.PublicKey)
@@ -963,6 +968,7 @@ func (srv *Server) setupConn(c *conn, flags connFlag, dialDest *enode.Node) erro
 	} else {
 		c.node = nodeFromConn(remotePubkey, c.fd)
 	}
+	srv.log.Trace("asdfasdfljasdfjlkasdfkljasdfkljasdflkasdfkl")
 	clog := srv.log.New("id", c.node.ID(), "addr", c.fd.RemoteAddr(), "conn", c.flags)
 	err = srv.checkpoint(c, srv.checkpointPostHandshake)
 	if err != nil {
