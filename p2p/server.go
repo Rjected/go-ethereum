@@ -145,6 +145,10 @@ type Config struct {
 	// Internet.
 	NAT nat.Interface `toml:",omitempty"`
 
+	// If set to a non-nil value, the Duration is used to set the dial interval.
+	// The default is 15 seconds.
+	DialTimeout *DialInterval `toml:",omitempty"`
+
 	// If Dialer is set to a non-nil value, the given Dialer
 	// is used to dial outbound peer connections.
 	Dialer NodeDialer `toml:"-"`
@@ -160,6 +164,25 @@ type Config struct {
 	Logger log.Logger `toml:",omitempty"`
 
 	clock mclock.Clock
+}
+
+// DialOption exists to write and parse human-friendly duration from a Server
+// config file.
+type DialInterval struct {
+	time.Duration
+}
+
+func (d *DialInterval) UnmarshalText(data []byte) error {
+	duration, err := time.ParseDuration(string(data))
+	if err == nil {
+		*d = DialInterval{duration}
+	}
+	return err
+}
+
+// MarshalText implements encoding.TextMarshaler
+func (d *DialInterval) MarshalText() ([]byte, error) {
+	return []byte(time.Duration(d.Duration).String()), nil
 }
 
 // Server manages all peer connections.
@@ -640,7 +663,12 @@ func (srv *Server) setupDialScheduler() {
 		config.resolver = srv.ntab
 	}
 	if config.dialer == nil {
-		config.dialer = tcpDialer{&net.Dialer{Timeout: defaultDialTimeout}}
+		dialTimeout := defaultDialTimeout
+		if srv.DialTimeout != nil {
+			dialTimeout = srv.DialTimeout.Duration
+		}
+
+		config.dialer = tcpDialer{&net.Dialer{Timeout: dialTimeout}}
 	}
 	srv.dialsched = newDialScheduler(config, srv.discmix, srv.SetupConn)
 	for _, n := range srv.StaticNodes {
