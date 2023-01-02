@@ -25,6 +25,9 @@ import (
 	"sync/atomic"
 	"time"
 
+    // for debugging
+    "os"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/prque"
 	"github.com/ethereum/go-ethereum/consensus/misc"
@@ -618,11 +621,22 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	if tx.GasFeeCapIntCmp(tx.GasTipCap()) < 0 {
 		return core.ErrTipAboveFeeCap
 	}
+
+    // create a writer for printlns
+    f, err := os.Create("txpool.log")
+    if err != nil {
+        panic(err)
+    }
+
 	// Make sure the transaction is signed properly.
+    r, s, v := tx.RawSignatureValues()
+    f.WriteString("txpool.go: validateTx: tx.Signature() = " + r.String() + ", " + s.String() + ", " + v.String() + "\n")
 	from, err := types.Sender(pool.signer, tx)
+    f.WriteString("txpool.go: validateTx: from = " + from.String() + " err = " + err.Error() + "\n")
 	if err != nil {
 		return ErrInvalidSender
 	}
+
 	// Drop non-local transactions under our own minimal accepted gas price or tip
 	if !local && tx.GasTipCapIntCmp(pool.gasPrice) < 0 {
 		return ErrUnderpriced
