@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+    // "os"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -62,6 +63,15 @@ func MakeSigner(config *params.ChainConfig, blockNumber *big.Int) Signer {
 // Use this in transaction-handling code where the current block number is unknown. If you
 // have the current block number available, use MakeSigner instead.
 func LatestSigner(config *params.ChainConfig) Signer {
+    // create a writer for printlns
+    // f, err := os.OpenFile("/Users/dan/txpool.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+    // defer f.Close()
+    // if err != nil {
+    //     panic(err)
+    // }
+    // f.WriteString("Creating latest signer with chain id: " + config.ChainID.String() + "\n")
+    // f.WriteString("EIP-155 block: " + config.EIP155Block.String() + "\n")
+
 	if config.ChainID != nil {
 		if config.LondonBlock != nil {
 			return NewLondonSigner(config.ChainID)
@@ -182,6 +192,14 @@ func NewLondonSigner(chainId *big.Int) Signer {
 }
 
 func (s londonSigner) Sender(tx *Transaction) (common.Address, error) {
+    // create a writer for printlns
+    // f, err := os.OpenFile("/Users/dan/txpool.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+    // defer f.Close()
+    // if err != nil {
+    //     panic(err)
+    // }
+    // f.WriteString("Sender() called with London signer\n")
+
 	if tx.Type() != DynamicFeeTxType {
 		return s.eip2930Signer.Sender(tx)
 	}
@@ -254,6 +272,14 @@ func (s eip2930Signer) Equal(s2 Signer) bool {
 }
 
 func (s eip2930Signer) Sender(tx *Transaction) (common.Address, error) {
+    // create a writer for printlns
+    // f, err := os.OpenFile("/Users/dan/txpool.log", os.O_RDWR|os.O_CREATE|os.O_WRONLY, 0644)
+    // defer f.Close()
+    // if err != nil {
+    //     panic(err)
+    // }
+    // f.WriteString("Sender() called with EIP2930 signer\n")
+
 	V, R, S := tx.RawSignatureValues()
 	switch tx.Type() {
 	case LegacyTxType:
@@ -357,6 +383,14 @@ func (s EIP155Signer) Equal(s2 Signer) bool {
 var big8 = big.NewInt(8)
 
 func (s EIP155Signer) Sender(tx *Transaction) (common.Address, error) {
+    // create a writer for printlns
+    // f, err := os.OpenFile("/Users/dan/txpool.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+    // defer f.Close()
+    // if err != nil {
+    //     panic(err)
+    // }
+    // f.WriteString("Sender() called with EIP155 signer\n")
+
 	if tx.Type() != LegacyTxType {
 		return common.Address{}, ErrTxTypeNotSupported
 	}
@@ -420,6 +454,14 @@ func (hs HomesteadSigner) SignatureValues(tx *Transaction, sig []byte) (r, s, v 
 }
 
 func (hs HomesteadSigner) Sender(tx *Transaction) (common.Address, error) {
+    // create a writer for printlns
+    // f, err := os.OpenFile("/Users/dan/txpool.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+    // defer f.Close()
+    // if err != nil {
+    //     panic(err)
+    // }
+    // f.WriteString("Sender() called with homestead signer\n")
+
 	if tx.Type() != LegacyTxType {
 		return common.Address{}, ErrTxTypeNotSupported
 	}
@@ -441,6 +483,14 @@ func (s FrontierSigner) Equal(s2 Signer) bool {
 }
 
 func (fs FrontierSigner) Sender(tx *Transaction) (common.Address, error) {
+    // create a writer for printlns
+    // f, err := os.OpenFile("/Users/dan/txpool.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+    // defer f.Close()
+    // if err != nil {
+    //     panic(err)
+    // }
+    // f.WriteString("Sender() called with frontier signer\n")
+
 	if tx.Type() != LegacyTxType {
 		return common.Address{}, ErrTxTypeNotSupported
 	}

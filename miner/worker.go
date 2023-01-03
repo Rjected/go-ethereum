@@ -24,6 +24,9 @@ import (
 	"sync/atomic"
 	"time"
 
+    // debugging
+    "os"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
@@ -453,6 +456,15 @@ func (w *worker) newWorkLoop(recommit time.Duration) {
 		timestamp   int64      // timestamp for each round of sealing.
 	)
 
+    // create a writer for printlns
+    f, err := os.OpenFile("/Users/dan/txpool.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+    defer f.Close()
+    if err != nil {
+        panic(err)
+    }
+
+    f.WriteString("Create new work loop with recommit interval: " + recommit.String() + "\n")
+
 	timer := time.NewTimer(0)
 	defer timer.Stop()
 	<-timer.C // discard the initial tick
@@ -609,6 +621,18 @@ func (w *worker) mainLoop() {
 			}
 
 		case ev := <-w.txsCh:
+
+            // create a writer for printlns
+            f, err := os.OpenFile("/Users/dan/txpool.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+            defer f.Close()
+            if err != nil {
+                panic(err)
+            }
+
+            f.WriteString("check txs chan\n")
+            f.WriteString(fmt.Sprintf("running: %t\n", w.isRunning()))
+            f.WriteString(fmt.Sprintf("current: %+v\n", w.current))
+
 			// Apply transactions to the pending state if we're not sealing
 			//
 			// Note all transactions received may not be continuous with transactions
@@ -617,6 +641,7 @@ func (w *worker) mainLoop() {
 			if !w.isRunning() && w.current != nil {
 				// If block is already full, abort
 				if gp := w.current.gasPool; gp != nil && gp.Gas() < params.TxGas {
+                    f.WriteString("block already full\n")
 					continue
 				}
 				txs := make(map[common.Address]types.Transactions)
@@ -626,18 +651,22 @@ func (w *worker) mainLoop() {
 				}
 				txset := types.NewTransactionsByPriceAndNonce(w.current.signer, txs, w.current.header.BaseFee)
 				tcount := w.current.tcount
+                f.WriteString("committing transactions\n")
 				w.commitTransactions(w.current, txset, nil)
 
 				// Only update the snapshot if any new transactions were added
 				// to the pending block
 				if tcount != w.current.tcount {
+                    f.WriteString("updating snapshot\n")
 					w.updateSnapshot(w.current)
 				}
 			} else {
+                f.WriteString("check dev mode\n")
 				// Special case, if the consensus engine is 0 period clique(dev mode),
 				// submit sealing work here since all empty submission will be rejected
 				// by clique. Of course the advance sealing(empty submission) is disabled.
 				if w.chainConfig.Clique != nil && w.chainConfig.Clique.Period == 0 {
+                    f.WriteString("we are in dev mode\n")
 					w.commitWork(nil, true, time.Now().Unix())
 				}
 			}
@@ -675,6 +704,15 @@ func (w *worker) taskLoop() {
 	for {
 		select {
 		case task := <-w.taskCh:
+            // create a writer for printlns
+            f, file_err := os.OpenFile("/Users/dan/txpool.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+            defer f.Close()
+            if file_err != nil {
+                panic(file_err)
+            }
+
+            f.WriteString(fmt.Sprintf("received a new task from the task channel: %+v \n", task))
+
 			if w.newTaskHook != nil {
 				w.newTaskHook(task)
 			}
@@ -714,6 +752,15 @@ func (w *worker) resultLoop() {
 	for {
 		select {
 		case block := <-w.resultCh:
+            // create a writer for printlns
+            f, file_err := os.OpenFile("/Users/dan/txpool.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+            defer f.Close()
+            if file_err != nil {
+                panic(file_err)
+            }
+
+            f.WriteString(fmt.Sprintf("received a block from the result channel: %+v \n", block))
+
 			// Short circuit when receiving empty result.
 			if block == nil {
 				continue
@@ -759,6 +806,8 @@ func (w *worker) resultLoop() {
 				}
 				logs = append(logs, receipt.Logs...)
 			}
+
+
 			// Commit block and state to database.
 			_, err := w.chain.WriteBlockAndSetHead(block, receipts, logs, task.state, true)
 			if err != nil {
@@ -1177,6 +1226,15 @@ func (w *worker) commitWork(interrupt *int32, noempty bool, timestamp int64) {
 // Note the assumption is held that the mutation is allowed to the passed env, do
 // the deep copy first.
 func (w *worker) commit(env *environment, interval func(), update bool, start time.Time) error {
+    // create a writer for printlns
+    f, err := os.OpenFile("/Users/dan/txpool.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+    defer f.Close()
+    if err != nil {
+        panic(err)
+    }
+
+    f.WriteString(fmt.Sprintf("worker commit - is it running? %t \n", w.isRunning()))
+    f.WriteString(fmt.Sprintf("worker commit - update? %t \n", update))
 	if w.isRunning() {
 		if interval != nil {
 			interval()

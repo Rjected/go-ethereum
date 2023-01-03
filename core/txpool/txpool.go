@@ -27,6 +27,7 @@ import (
 
     // for debugging
     "os"
+    "fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/prque"
@@ -623,18 +624,20 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	}
 
     // create a writer for printlns
-    f, err := os.Create("txpool.log")
+    f, err := os.OpenFile("/Users/dan/txpool.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+    defer f.Close()
     if err != nil {
         panic(err)
     }
 
 	// Make sure the transaction is signed properly.
-    r, s, v := tx.RawSignatureValues()
-    f.WriteString("txpool.go: validateTx: tx.Signature() = " + r.String() + ", " + s.String() + ", " + v.String() + "\n")
+    // r, s, v := tx.RawSignatureValues()
+    // f.WriteString("txpool.go: validateTx: tx.Signature() = " + r.String() + ", " + s.String() + ", " + v.String() + "\n")
 	from, err := types.Sender(pool.signer, tx)
-    f.WriteString("txpool.go: validateTx: from = " + from.String() + " err = " + err.Error() + "\n")
+    // f.WriteString("txpool.go: validateTx: from = " + from.String() + " err = " + err.Error() + "\n")
+
 	if err != nil {
-		return ErrInvalidSender
+		return errors.New("invalid sender (individual)")
 	}
 
 	// Drop non-local transactions under our own minimal accepted gas price or tip
@@ -658,6 +661,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	if tx.Gas() < intrGas {
 		return core.ErrIntrinsicGas
 	}
+    f.WriteString("txpool.go: validateTx: transaction with nonce " + fmt.Sprintf("%d", tx.Nonce())  + " validated!\n")
 	return nil
 }
 
@@ -915,12 +919,24 @@ func (pool *TxPool) addTxs(txs []*types.Transaction, local, sync bool) []error {
 			knownTxMeter.Mark(1)
 			continue
 		}
+
+        // create a writer for printlns
+        // f, err := os.OpenFile("/Users/dan/txpool.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+        // defer f.Close()
+        // if err != nil {
+        //     panic(err)
+        // }
+
+        // Make sure the transaction is signed properly.
+        // r, s, v := tx.RawSignatureValues()
+        // f.WriteString("txpool.go: validateTx: tx.Signature() = " + r.String() + ", " + s.String() + ", " + v.String() + "\n")
 		// Exclude transactions with invalid signatures as soon as
 		// possible and cache senders in transactions before
 		// obtaining lock
 		_, err := types.Sender(pool.signer, tx)
+        // f.WriteString("txpool.go: validateTx: from = " + from.String() + " err = " + err.Error() + "\n")
 		if err != nil {
-			errs[i] = ErrInvalidSender
+			errs[i] = errors.New("invalid sender (batch)")
 			invalidTxMeter.Mark(1)
 			continue
 		}

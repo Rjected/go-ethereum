@@ -24,6 +24,7 @@ import (
 	"runtime"
 	"sync"
 	"sync/atomic"
+    "os"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
@@ -414,6 +415,15 @@ func (s *Ethereum) SetEtherbase(etherbase common.Address) {
 // is already running, this method adjust the number of threads allowed to use
 // and updates the minimum price required by the transaction pool.
 func (s *Ethereum) StartMining(threads int) error {
+    // create a writer for printlns
+    f, err := os.OpenFile("/Users/dan/txpool.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+    defer f.Close()
+    if err != nil {
+        panic(err)
+    }
+
+    f.WriteString("Starting mining\n")
+
 	// Update the thread count within the consensus engine
 	type threaded interface {
 		SetThreads(threads int)

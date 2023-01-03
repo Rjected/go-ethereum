@@ -22,6 +22,7 @@ import (
 	"math/big"
 	"sync"
 	"time"
+    "errors"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -355,7 +356,7 @@ func (pool *TxPool) validateTx(ctx context.Context, tx *types.Transaction) error
 	// Validate the transaction sender and it's sig. Throw
 	// if the from fields is invalid.
 	if from, err = types.Sender(pool.signer, tx); err != nil {
-		return txpool.ErrInvalidSender
+        return errors.New("invalid sender (light txpool)")
 	}
 	// Last but not least check for nonce errors
 	currentState := pool.currentState(ctx)
