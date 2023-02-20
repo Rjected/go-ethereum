@@ -20,6 +20,7 @@ package forkid
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"hash/crc32"
 	"math"
 	"math/big"
@@ -79,6 +80,7 @@ func NewID(config *params.ChainConfig, genesis common.Hash, head, time uint64) I
 
 	// Calculate the current fork checksum and the next fork block
 	forksByBlock, forksByTime := gatherForks(config)
+	fmt.Printf("forksByBlock: %v, forksByTime: %v", forksByBlock, forksByTime)
 	for _, fork := range forksByBlock {
 		if fork <= head {
 			// Fork already passed, checksum the previous hash and the fork number

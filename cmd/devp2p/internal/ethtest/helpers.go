@@ -153,18 +153,34 @@ func (c *Conn) statusExchange(chain *Chain, status *Status) (Message, error) {
 	defer c.SetDeadline(time.Time{})
 	c.SetDeadline(time.Now().Add(20 * time.Second))
 
+	// ok let's just print the boundary hashes
+	for i := 0; i < 5; i++ {
+		fmt.Printf("last 5 hashes in chain: %#v\n", chain.blocks[chain.Len()-i-1].Hash())
+	}
+
+	// now print the genesis hash
+	fmt.Printf("genesis hash: %#v\n", chain.blocks[0].Hash())
+
+	// print the genesis
+	fmt.Printf("genesis: %#v\n", chain.blocks[0])
+
 	// read status message from client
 	var message Message
 loop:
 	for {
 		switch msg := c.Read().(type) {
 		case *Status:
+			fmt.Printf("status message: %#v\n", msg)
+			if have, want := msg.Genesis, chain.blocks[0].Hash(); have != want {
+				return nil, fmt.Errorf("wrong genesis block in status, want:  %#x (block %d) have %#x",
+					want, chain.blocks[0].NumberU64(), have)
+			}
 			if have, want := msg.Head, chain.blocks[chain.Len()-1].Hash(); have != want {
 				return nil, fmt.Errorf("wrong head block in status, want:  %#x (block %d) have %#x",
 					want, chain.blocks[chain.Len()-1].NumberU64(), have)
 			}
 			if have, want := msg.TD.Cmp(chain.TD()), 0; have != want {
-				return nil, fmt.Errorf("wrong TD in status: have %v want %v", have, want)
+				return nil, fmt.Errorf("wrong TD in status: have %v want %v", msg.TD, chain.TD())
 			}
 			if have, want := msg.ForkID, chain.ForkID(); !reflect.DeepEqual(have, want) {
 				return nil, fmt.Errorf("wrong fork ID in status: have %v, want %v", have, want)
