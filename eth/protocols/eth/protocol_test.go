@@ -18,7 +18,9 @@ package eth
 
 import (
 	"bytes"
+	"encoding/hex"
 	"math/big"
+	"reflect"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -115,6 +117,129 @@ func TestEth66EmptyMessages(t *testing.T) {
 			t.Errorf("test %d, type %T, have\n\t%x\nwant\n\t%x", i, msg, have, want)
 		}
 	}
+}
+
+// TestEth68TransactionMessage tests the encoding of the
+// NewPooledTransactionHashesPacket68 message.
+func TestEth68TransactionMessage(t *testing.T) {
+    var (
+		hashes       []common.Hash
+        sizes        []uint32
+        txTypes      []byte
+        packets []NewPooledTransactionHashesPacket68
+    )
+
+    packets = []NewPooledTransactionHashesPacket68{
+        {},
+    }
+
+    hashes = []common.Hash{
+        common.HexToHash("0x0"),
+        common.HexToHash("0x1"),
+        common.HexToHash("0x2"),
+
+        common.HexToHash("0x3b9aca00f0671c9a2a1b817a0a78d3fe0c0f776cccb2a8c3c1b412a4f4e4d4e2"),
+        common.HexToHash("0xbeefcafebeefcafebeefcafebeefcafebeefcafebeefcafebeefcafebeefcafe"),
+
+        common.HexToHash("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
+    }
+
+    sizes = []uint32{
+        0,
+        1,
+
+        0x7fffffff,
+        0xcafebeef,
+        0xdeadc0de,
+
+        0xffffffff,
+    }
+
+    txTypes = []byte{
+        0x00,
+        0x01,
+        0x10,
+        0x6f,
+        0xff,
+    }
+
+    // build the list of test cases
+    for _, hash := range hashes {
+        for _, size := range sizes {
+            for _, ty := range txTypes {
+                for l := 1; l < 3; l++ {
+                    var packetHashes []common.Hash
+                    var packetSizes []uint32
+                    var packetTypes []byte
+
+                    for i := 0; i < l; i++ {
+                        packetHashes = append(packetHashes, hash)
+                        packetSizes = append(packetSizes, size)
+                        packetTypes = append(packetTypes, ty)
+                    }
+
+                    // build the NewPooledTransactionHashesPacket68
+                    packet := NewPooledTransactionHashesPacket68{
+                        Hashes: packetHashes,
+                        Sizes: packetSizes,
+                        Types: packetTypes,
+                    }
+
+                    // add the packet to the list of test cases
+                    packets = append(packets, packet)
+                }
+            }
+        }
+    }
+
+    // e602c281b6e1a0fecbed04c7b88d8e7221a0a3f5dc33f220212347fc167459ea5cc9c3eb4c1124
+    // convert to []byte
+    myMessageHex := "e602c281b6e1a0fecbed04c7b88d8e7221a0a3f5dc33f220212347fc167459ea5cc9c3eb4c1124"
+    myMessageBytes, _ := hex.DecodeString(myMessageHex)
+
+    // decode the packet
+    var decoded NewPooledTransactionHashesPacket68
+    if err := rlp.DecodeBytes(myMessageBytes, &decoded); err != nil {
+        t.Errorf("my message: error decoding packet: %v", err)
+    }
+
+    // print the packet
+    t.Logf("my message: decoded packet: %+#v", decoded)
+
+    // check its encoding
+    encoded, err := rlp.EncodeToBytes(decoded)
+    if err != nil {
+        t.Errorf("my message: error encoding packet: %v", err)
+    }
+
+    // log encoded packet
+    t.Logf("my message: encoded packet: %x", encoded)
+
+    // check the Bytes value of some of the fields
+    reflectTypes := reflect.ValueOf(decoded.Types)
+    t.Logf("my message: Hashes[0].Bytes(): %x", reflectTypes.Bytes())
+
+    // test the encoding of the packets
+    for i, packet := range packets {
+        // encode the packet
+        encoded, err := rlp.EncodeToBytes(packet)
+        if err != nil {
+            t.Errorf("test %d: error encoding packet: %v", i, err)
+            continue
+        }
+
+        // log encoded packet
+        t.Logf("test %d: encoded packet: %x", i, encoded)
+
+        // decode the packet
+        var decoded NewPooledTransactionHashesPacket68
+        if err := rlp.DecodeBytes(encoded, &decoded); err != nil {
+            t.Errorf("test %d: error decoding packet: %v", i, err)
+            continue
+        }
+
+        t.Logf("test %d: decoded packet: %+#v", i, decoded)
+    }
 }
 
 // TestEth66Messages tests the encoding of all redefined eth66 messages
