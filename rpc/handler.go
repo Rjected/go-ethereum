@@ -453,6 +453,7 @@ func (h *handler) handleSubscriptionResult(msg *jsonrpcMessage) {
 		return
 	}
 	if h.clientSubs[result.ID] != nil {
+        h.log.Info("handleSubscriptionResult", "result", result)
 		h.clientSubs[result.ID].deliver(result.Result)
 	}
 }

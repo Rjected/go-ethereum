@@ -18,6 +18,8 @@
 package state
 
 import (
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"sort"
 	"time"
@@ -374,6 +376,7 @@ func (s *StateDB) HasSelfDestructed(addr common.Address) bool {
 
 // AddBalance adds amount to the account associated with addr.
 func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int) {
+    fmt.Println("AddBalance (printing balance as HEX)", addr, fmt.Sprintf("%x", amount))
 	stateObject := s.getOrNewStateObject(addr)
 	if stateObject != nil {
 		stateObject.AddBalance(amount)
@@ -389,6 +392,7 @@ func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int) {
 }
 
 func (s *StateDB) SetBalance(addr common.Address, amount *uint256.Int) {
+    fmt.Println("SetBalance", addr, amount)
 	stateObject := s.getOrNewStateObject(addr)
 	if stateObject != nil {
 		stateObject.SetBalance(amount)
@@ -396,21 +400,25 @@ func (s *StateDB) SetBalance(addr common.Address, amount *uint256.Int) {
 }
 
 func (s *StateDB) SetNonce(addr common.Address, nonce uint64) {
-	stateObject := s.getOrNewStateObject(addr)
+    fmt.Println("SetNonce", addr, nonce)
+	stateObject := s.GetOrNewStateObject(addr)
 	if stateObject != nil {
 		stateObject.SetNonce(nonce)
 	}
 }
 
 func (s *StateDB) SetCode(addr common.Address, code []byte) {
-	stateObject := s.getOrNewStateObject(addr)
+    hexCode := hex.EncodeToString(code)
+    fmt.Println("SetCode", addr, hexCode)
+	stateObject := s.GetOrNewStateObject(addr)
 	if stateObject != nil {
 		stateObject.SetCode(crypto.Keccak256Hash(code), code)
 	}
 }
 
 func (s *StateDB) SetState(addr common.Address, key, value common.Hash) {
-	stateObject := s.getOrNewStateObject(addr)
+    fmt.Println("SetState", addr, key, value)
+	stateObject := s.GetOrNewStateObject(addr)
 	if stateObject != nil {
 		stateObject.SetState(key, value)
 	}
@@ -420,6 +428,7 @@ func (s *StateDB) SetState(addr common.Address, key, value common.Hash) {
 // storage. This function should only be used for debugging and the mutations
 // must be discarded afterwards.
 func (s *StateDB) SetStorage(addr common.Address, storage map[common.Hash]common.Hash) {
+    fmt.Println("SetStorage", addr, storage)
 	// SetStorage needs to wipe existing storage. We achieve this by pretending
 	// that the account self-destructed earlier in this block, by flagging
 	// it in stateObjectsDestruct. The effect of doing so is that storage lookups
@@ -1221,6 +1230,7 @@ func (s *StateDB) Commit(block uint64, deleteEmptyObjects bool) (common.Hash, er
 	if metrics.EnabledExpensive {
 		start = time.Now()
 	}
+    log.Info("COMMITTING TREE")
 	root, set, err := s.trie.Commit(true)
 	if err != nil {
 		return common.Hash{}, err

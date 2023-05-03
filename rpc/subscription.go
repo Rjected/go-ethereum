@@ -29,6 +29,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+    "fmt"
 )
 
 var (
@@ -276,6 +278,7 @@ func (sub *ClientSubscription) Unsubscribe() {
 
 // deliver is called by the client's message dispatcher to send a notification value.
 func (sub *ClientSubscription) deliver(result json.RawMessage) (ok bool) {
+    fmt.Print("DANGER result", result)
 	select {
 	case sub.in <- result:
 		return true
@@ -354,6 +357,7 @@ func (sub *ClientSubscription) forward() (unsubscribeServer bool, err error) {
 
 		case 1: // <-sub.in
 			val, err := sub.unmarshal(recv.Interface().(json.RawMessage))
+            fmt.Print("DANGER val", val)
 			if err != nil {
 				return true, err
 			}

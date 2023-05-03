@@ -17,6 +17,8 @@
 package trie
 
 import (
+	"encoding/hex"
+	"fmt"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/crypto"
@@ -84,7 +86,11 @@ func (h *hasher) hash(n node, force bool) (hashed node, cached node) {
 		}
 		return hashed, cached
 	default:
-		// Value and hash nodes don't have children, so they're left as were
+		// Value and hash nodes don't have children so they're left as were
+        // PRINT THE RLP HERE
+        n.encode(h.encbuf)
+        enc := h.encodedBytes()
+        fmt.Println("RLP ENCODED CHILD", "rlp", enc)
 		return n, n
 	}
 }
@@ -145,6 +151,8 @@ func (h *hasher) hashFullNodeChildren(n *fullNode) (collapsed *fullNode, cached 
 func (h *hasher) shortnodeToHash(n *shortNode, force bool) node {
 	n.encode(h.encbuf)
 	enc := h.encodedBytes()
+    hexString := hex.EncodeToString(enc)
+    fmt.Println("RLP ENCODED CHILD (SHORT)", "rlp", hexString)
 
 	if len(enc) < 32 && !force {
 		return n // Nodes smaller than 32 bytes are stored inside their parent
@@ -157,6 +165,9 @@ func (h *hasher) shortnodeToHash(n *shortNode, force bool) node {
 func (h *hasher) fullnodeToHash(n *fullNode, force bool) node {
 	n.encode(h.encbuf)
 	enc := h.encodedBytes()
+    // hex to string
+    hexString := hex.EncodeToString(enc)
+    fmt.Println("RLP ENCODED CHILD (FULL)", "rlp", hexString)
 
 	if len(enc) < 32 && !force {
 		return n // Nodes smaller than 32 bytes are stored inside their parent

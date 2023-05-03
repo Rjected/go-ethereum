@@ -18,6 +18,7 @@
 package types
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -410,7 +411,12 @@ func (b *Block) Size() uint64 {
 		return size.(uint64)
 	}
 	c := writeCounter(0)
+	other_c := new(bytes.Buffer)
 	rlp.Encode(&c, b)
+	rlp.Encode(other_c, b)
+	// print hex encoding of the block
+	fmt.Printf("block: %x\n", other_c.Bytes())
+	fmt.Printf("block len: %d\n", len(other_c.Bytes()))
 	b.size.Store(uint64(c))
 	return uint64(c)
 }

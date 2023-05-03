@@ -28,6 +28,7 @@ import (
 	"github.com/ethereum/go-ethereum/internal/blocktest"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
+	"golang.org/x/crypto/sha3"
 )
 
 // from bcValidBlockTest.json, "SimpleTx"
@@ -317,3 +318,108 @@ func TestRlpDecodeParentHash(t *testing.T) {
 		}
 	}
 }
+
+// Tests the reflect size of the Header{} struct.
+func TestGetHeaderSize(t *testing.T) {
+	var headerSize = reflect.TypeOf(Header{}).Size()
+	t.Logf("Header size: %d bytes", headerSize)
+	t.Fail()
+}
+
+// / Tests a problematic rlp case from reth
+//func TestRethBlockSize(t *testing.T) {
+
+//	// the following JSON needs to be written out as a Block struct, and we can't
+//	// have any incorrect fields
+//	//
+//	//             {
+//	//                 "baseFeePerGas": "0x342770c0",
+//	//                 "difficulty": "0x0",
+//	//                 "extraData": "0x",
+//	//                 "gasLimit": "0x4c4b40",
+//	//                 "gasUsed": "0x5208",
+//	//                 "hash": "0x898753d8fdd8d92c1907ca21e68c7970abd290c647a202091181deec3f30a0b2",
+//	//                 "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+//	//                 "miner": "0x0000000000000000000000000000000000000000",
+//	//                 "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+//	//                 "nonce": "0x0000000000000000",
+//	//                 "number": "0x1",
+//	//                 "parentHash": "0x1fc027d65f820d3eef441ebeec139ebe09e471cf98516dce7b5643ccb27f418c",
+//	//                 "receiptsRoot": "0x056b23fbba480696b65fe5a59b8f2148a1299103c4f57df839233af2cf4ca2d2",
+//	//                 "uncles": [
+//	//                 ],
+//	//                 "sha3Uncles": "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+//	//                 "size": "0x28b",
+//	//                 "stateRoot": "0xa112033b100ca01e159de21f1bb229133c7734c616bbf34c2f51032c6da71f75",
+//	//                 "timestamp": "0xa",
+//	//                 "totalDifficulty": "0x1",
+//	//                 "transactions": [
+//	//                   {
+//	//                     "blockHash": "0x898753d8fdd8d92c1907ca21e68c7970abd290c647a202091181deec3f30a0b2",
+//	//                     "blockNumber": "0x1",
+//	//                     "chainId": "0x539",
+//	//                     "from": "0x658bdf435d810c91414ec09147daa6db62406379",
+//	//                     "gas": "0x5208",
+//	//                     "gasPrice": "0x342770c1",
+//	//                     "hash": "0x74e41d593675913d6d5521f46523f1bd396dff1891bdb35f59be47c7e5e0b34b",
+//	//                     "input": "0x",
+//	//                     "nonce": "0x0",
+//	//                     "r": "0xaf5fc351b9e457a31f37c84e5cd99dd3c5de60af3de33c6f4160177a2c786a60",
+//	//                     "s": "0x201da7a21046af55837330a2c52fc1543cd4d9ead00ddf178dd96935b607ff9b",
+//	//                     "to": "0x658bdf435d810c91414ec09147daa6db62406379",
+//	//                     "transactionIndex": "0x0",
+//	//                     "type": "0x0",
+//	//                     "v": "0xa95",
+//	//                     "value": "0x3e8"
+//	//                   }
+//	//                 ],
+//	//                 "transactionsRoot": "0xbf06cffa242d5b5d567567b318fc73c54364a73827ab4cdbca7a9db1c788581a",
+//	//                 "withdrawals": [
+//	//                 ],
+//	//                 "withdrawalsRoot": "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
+//	//             }
+//	withdrawalsHash := common.HexToHash("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
+//	header := &Header{
+//		ParentHash:      common.HexToHash("0x1fc027d65f820d3eef441ebeec139ebe09e471cf98516dce7b5643ccb27f418c"),
+//		UncleHash:       common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"),
+//		Coinbase:        common.HexToAddress("0x0000000000000000000000000000000000000000"),
+//		Root:            common.HexToHash("0xa112033b100ca01e159de21f1bb229133c7734c616bbf34c2f51032c6da71f75"),
+//		TxHash:          common.HexToHash("0xbf06cffa242d5b5d567567b318fc73c54364a73827ab4cdbca7a9db1c788581a"),
+//		ReceiptHash:     common.HexToHash("0x056b23fbba480696b65fe5a59b8f2148a1299103c4f57df839233af2cf4ca2d2"),
+//		Bloom:           BytesToBloom(common.FromHex("0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")),
+//		Difficulty:      big.NewInt(0x0),
+//		Number:          big.NewInt(0x1),
+//		GasLimit:        0x4c4b40,
+//		GasUsed:         0x5208,
+//		Time:            0xa,
+//		Extra:           []byte{},
+//		MixDigest:       common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
+//		Nonce:           BlockNonce{},
+//		BaseFee:         big.NewInt(0x342770c0),
+//		WithdrawalsHash: &withdrawalsHash,
+//	}
+
+//	to := common.HexToAddress("0x658bdf435d810c91414ec09147daa6db62406379")
+//	// need to convert big int from hex
+//	r := common.HexToHash("0xaf5fc351b9e457a31f37c84e5cd99dd3c5de60af3de33c6f4160177a2c786a60")
+//	s := common.HexToHash("0x201da7a21046af55837330a2c52fc1543cd4d9ead00ddf178dd96935b607ff9b")
+//	bigR := new(big.Int).SetBytes(r[:])
+//	bigS := new(big.Int).SetBytes(s[:])
+//	tx := &LegacyTx{
+//		Nonce:    0x0,
+//		GasPrice: big.NewInt(0x342770c0),
+//		Gas:      0x5208,
+//		To:       &to,
+//		Value:    big.NewInt(0x3e8),
+//		Data:     []byte{},
+//		V:        big.NewInt(0xa95),
+//		R:        bigR,
+//		S:        bigS,
+//	}
+
+//	block := NewBlockWithWithdrawals(header, []*Transaction{NewTx(tx)}, []*Header{}, []*Receipt{}, []*Withdrawal{}, trie.NewStackTrie(nil))
+//	size := block.Size()
+//	t.Logf("size: %d", size)
+
+//	t.Fail()
+//}
