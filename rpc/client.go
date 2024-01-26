@@ -644,7 +644,7 @@ func (c *Client) dispatch(codec ServerCodec) {
 
 		// Read path:
 		case op := <-c.readOp:
-            log.Info("RPC connection read op", "op", op)
+			log.Info("RPC connection read op", "op", op)
 			if op.batch {
 				conn.handler.handleBatch(op.msgs)
 			} else {
