@@ -90,7 +90,8 @@ func (h *hasher) hash(n node, force bool) (hashed node, cached node) {
 		// PRINT THE RLP HERE
 		n.encode(h.encbuf)
 		enc := h.encodedBytes()
-		fmt.Println("RLP ENCODED CHILD", "rlp", enc)
+		hexString := hex.EncodeToString(enc)
+		fmt.Println("RLP ENCODED CHILD", "rlp", hexString)
 		return n, n
 	}
 }
